@@ -292,7 +292,7 @@ class WorkoutApp {
 // Глобальные функции для вызовов из HTML
 function addExercise() {
     const name = document.getElementById('exercise-name').value;
-    const duration = document.getElementById('exercise-duration').value;
+    const duration = document.getElementById('exercise-duration').value * 60;
     app.addExercise(name, duration);
 }
 
