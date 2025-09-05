@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PipeFit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PipeFit</h1>
+            <nav>
+                <button class="nav-btn active" data-tab="elements">Элементы</button>
+                <button class="nav-btn" data-tab="workout">Тренировка</button>
+                <button class="nav-btn" data-tab="current">Текущая</button>
+            </nav>
+        </header>
+
+        <!-- Вкладка элементов -->
+        <div class="tab-content active" id="elements-tab">
+            <div class="form-group">
+                <input type="text" id="exercise-name" placeholder="Название упражнения">
+                <input type="number" id="exercise-duration" placeholder="Длительность (сек)">
+                <button onclick="addExercise()">Добавить</button>
+            </div>
+            
+            <div class="elements-list" id="elements-list">
+                <!-- Элементы будут добавляться здесь -->
+            </div>
+        </div>
+
+        <!-- Вкладка составления тренировки -->
+        <div class="tab-content" id="workout-tab">
+            <div class="workout-controls">
+                <input type="text" id="workout-name" placeholder="Название тренировки">
+                <button onclick="createWorkout()">Создать тренировку</button>
+            </div>
+            
+            <div class="workout-elements" id="workout-elements">
+                <!-- Элементы тренировки будут здесь -->
+            </div>
+            
+            <div class="saved-workouts">
+                <h3>Сохраненные тренировки</h3>
+                <div id="saved-workouts-list"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка текущей тренировки -->
+        <div class="tab-content" id="current-tab">
+            <div class="current-workout">
+                <h2 id="current-workout-name">Выберите тренировку</h2>
+                <div class="timer" id="timer">00:00</div>
+                <div class="current-exercise" id="current-exercise">
+                    <h3 id="exercise-title">-</h3>
+                    <p id="exercise-time">-</p>
+                </div>
+                
+                <div class="controls">
+                    <button onclick="startWorkout()" id="start-btn">Начать</button>
+                    <button onclick="pauseWorkout()" id="pause-btn" disabled>Пауза</button>
+                    <button onclick="nextExercise()" id="next-btn" disabled>Следующее</button>
+                    <button onclick="stopWorkout()" id="stop-btn" disabled>Стоп</button>
+                </div>
+                
+                <div class="progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <span id="progress-text">0/0</span>
+                </div>
+                
+                <div class="upcoming-exercises" id="upcoming-exercises">
+                    <!-- Предстоящие упражнения -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
