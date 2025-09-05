@@ -21,7 +21,7 @@
         <div class="tab-content active" id="elements-tab">
             <div class="form-group">
                 <input type="text" id="exercise-name" placeholder="Название упражнения">
-                <input type="number" id="exercise-duration" placeholder="Длительность (мин)">
+                <input type="number" id="exercise-duration" placeholder="Длительность (сек)">
                 <button onclick="addExercise()">Добавить</button>
             </div>
             
@@ -34,9 +34,40 @@
         <div class="tab-content" id="workout-tab">
             <div class="workout-controls">
                 <input type="text" id="workout-name" placeholder="Название тренировки">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="is-circular"> Циклическая тренировка
+                    </label>
+                    <input type="number" id="cycles-count" placeholder="Количество кругов" value="1" min="1" disabled>
+                </div>
                 <button onclick="createWorkout()">Создать тренировку</button>
             </div>
+
+            <div class="auto-pause-settings">
+                <label>
+                    <input type="checkbox" id="auto-pause" checked> Автопауза после упражнения
+                </label>
+                <label>
+                    <input type="number" id="pause-duration" value="10" min="5" max="60"> сек паузы
+                </label>
+            </div>
+
+            <!-- <audio id="notification-sound" preload="auto">
+                <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADwADw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PD///////////////////////////////////////////////////////////////////////////8AAAA8TEFNRTMuMTAwBK8AAAAAAAAAADUgJAaPhQABxAAAA8AAKuU7AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mpeg">
+            </audio> -->
+
+            <audio id="notification-sound-stop" preload="auto">
+                <source src="sound_stop.mp3" type="audio/mpeg">
+                <source src="notification.ogg" type="audio/ogg">
+            </audio>
+
+            <audio id="notification-sound-pause" preload="auto">
+                <source src="sound_pause.mp3" type="audio/mpeg">
+                <source src="notification.ogg" type="audio/ogg">
+            </audio>
             
+
+
             <div class="workout-elements" id="workout-elements">
                 <!-- Элементы тренировки будут здесь -->
             </div>
@@ -51,7 +82,18 @@
         <div class="tab-content" id="current-tab">
             <div class="current-workout">
                 <h2 id="current-workout-name">Выберите тренировку</h2>
+                
+                <div class="time-info">
+                    <div>Общее время: <span id="total-time">00:00</span></div>
+                    <div>Осталось: <span id="remaining-time">00:00</span></div>
+                </div>
+
+                <div class="cycle-info" id="cycle-info">
+                    <span id="current-cycle">Круг: -/-</span>
+                </div>
+                
                 <div class="timer" id="timer">00:00</div>
+                
                 <div class="current-exercise" id="current-exercise">
                     <h3 id="exercise-title">-</h3>
                     <p id="exercise-time">-</p>

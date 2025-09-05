@@ -1,20 +1,53 @@
-class WorkoutApp {
+class PipeFitApp {
     constructor() {
         this.exercises = JSON.parse(localStorage.getItem('exercises')) || [];
         this.workouts = JSON.parse(localStorage.getItem('workouts')) || [];
         this.currentWorkout = null;
         this.currentExerciseIndex = 0;
+        this.currentCycle = 1;
         this.isRunning = false;
         this.timerInterval = null;
         this.remainingTime = 0;
         
+        this.totalWorkoutTime = 0;
+        this.remainingWorkoutTime = 0;
+
         this.init();
+
+        this.isAutoPause = true;
+        this.pauseDuration = 10;
+        this.pauseTimer = null;
+        this.isPauseCountdown = false;
+        this.pauseCountdownTime = 0;
+        
+        this.setupSoundSettings();
     }
 
     init() {
         this.setupEventListeners();
         this.renderExercises();
         this.renderSavedWorkouts();
+    }
+
+    setupSoundSettings() {
+        // Загрузка настроек из localStorage
+        this.isAutoPause = localStorage.getItem('autoPause') !== 'false';
+        this.pauseDuration = parseInt(localStorage.getItem('pauseDuration')) || 10;
+        
+        // Установка значений в форму
+        document.getElementById('auto-pause').checked = this.isAutoPause;
+        document.getElementById('pause-duration').value = this.pauseDuration;
+        
+        // Обработчики изменений настроек
+        document.getElementById('auto-pause').addEventListener('change', (e) => {
+            this.isAutoPause = e.target.checked;
+            localStorage.setItem('autoPause', this.isAutoPause);
+        });
+        
+        document.getElementById('pause-duration').addEventListener('change', (e) => {
+            this.pauseDuration = parseInt(e.target.value) || 10;
+            localStorage.setItem('pauseDuration', this.pauseDuration);
+        });
     }
 
     setupEventListeners() {
@@ -25,14 +58,17 @@ class WorkoutApp {
                 this.switchTab(tab);
             });
         });
+
+        // Переключение циклической тренировки
+        document.getElementById('is-circular').addEventListener('change', (e) => {
+            document.getElementById('cycles-count').disabled = !e.target.checked;
+        });
     }
 
     switchTab(tabName) {
-        // Деактивируем все кнопки и вкладки
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
 
-        // Активируем выбранные
         document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
         document.getElementById(`${tabName}-tab`).classList.add('active');
     }
@@ -53,7 +89,6 @@ class WorkoutApp {
         this.saveExercises();
         this.renderExercises();
 
-        // Очищаем поля ввода
         document.getElementById('exercise-name').value = '';
         document.getElementById('exercise-duration').value = '';
     }
@@ -81,7 +116,7 @@ class WorkoutApp {
                     <div class="exercise-duration">${exercise.duration} сек</div>
                 </div>
                 <div class="actions">
-                    <button onclick="app.addToWorkout(${exercise.id})">+</button>
+                    <button onclick="app.addToWorkout(${exercise.id}, 1)">+</button>
                     <button onclick="app.deleteExercise(${exercise.id})">×</button>
                 </div>
             `;
@@ -89,22 +124,53 @@ class WorkoutApp {
         });
     }
 
-    addToWorkout(exerciseId) {
+    addToWorkout(exerciseId, cycles = 1) {
         const exercise = this.exercises.find(ex => ex.id === exerciseId);
         if (!exercise) return;
 
         const container = document.getElementById('workout-elements');
         const div = document.createElement('div');
-        div.className = 'exercise-item';
+        div.className = `exercise-item ${cycles > 1 ? 'exercise-with-cycles' : ''}`;
         div.dataset.id = exerciseId;
+        div.dataset.cycles = cycles;
         div.innerHTML = `
             <div class="exercise-info">
-                <div class="exercise-name">${exercise.name}</div>
+                <div class="exercise-name">
+                    ${exercise.name}
+                    ${cycles > 1 ? `<span class="cycle-badge">${cycles} раз</span>` : ''}
+                </div>
                 <div class="exercise-duration">${exercise.duration} сек</div>
             </div>
-            <button onclick="this.parentElement.remove()">×</button>
+            <div class="actions">
+                <button onclick="app.changeCycles(${exerciseId}, ${cycles + 1})">+1</button>
+                <button onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
         `;
         container.appendChild(div);
+    }
+
+    changeCycles(exerciseId, newCycles) {
+        const item = Array.from(document.getElementById('workout-elements').children)
+            .find(item => parseInt(item.dataset.id) === exerciseId);
+        
+        if (item) {
+            item.dataset.cycles = newCycles;
+            const exercise = this.exercises.find(ex => ex.id === exerciseId);
+            
+            item.innerHTML = `
+                <div class="exercise-info">
+                    <div class="exercise-name">
+                        ${exercise.name}
+                        ${newCycles > 1 ? `<span class="cycle-badge">${newCycles} раз</span>` : ''}
+                    </div>
+                    <div class="exercise-duration">${exercise.duration} сек</div>
+                </div>
+                <div class="actions">
+                    <button onclick="app.changeCycles(${exerciseId}, ${newCycles + 1})">+1</button>
+                    <button onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            `;
+        }
     }
 
     createWorkout() {
@@ -120,15 +186,34 @@ class WorkoutApp {
             return;
         }
 
-        const exercises = workoutElements.map(item => {
+        const isCircular = document.getElementById('is-circular').checked;
+        const cyclesCount = parseInt(document.getElementById('cycles-count').value) || 1;
+
+        // Создаем плоский список упражнений с учетом повторений
+        const flatExercises = [];
+        workoutElements.forEach(item => {
             const exerciseId = parseInt(item.dataset.id);
-            return this.exercises.find(ex => ex.id === exerciseId);
-        }).filter(ex => ex);
+            const cycles = parseInt(item.dataset.cycles) || 1;
+            const exercise = this.exercises.find(ex => ex.id === exerciseId);
+            
+            if (exercise) {
+                for (let i = 0; i < cycles; i++) {
+                    flatExercises.push({
+                        ...exercise,
+                        originalCycles: cycles,
+                        currentCycle: i + 1
+                    });
+                }
+            }
+        });
 
         const workout = {
             id: Date.now(),
             name: name,
-            exercises: exercises,
+            exercises: flatExercises,
+            isCircular: isCircular,
+            totalCycles: isCircular ? cyclesCount : 1,
+            currentCycle: 1,
             createdAt: new Date().toISOString()
         };
 
@@ -136,9 +221,11 @@ class WorkoutApp {
         this.saveWorkouts();
         this.renderSavedWorkouts();
 
-        // Очищаем форму
         document.getElementById('workout-name').value = '';
         document.getElementById('workout-elements').innerHTML = '';
+        document.getElementById('is-circular').checked = false;
+        document.getElementById('cycles-count').disabled = true;
+        document.getElementById('cycles-count').value = '1';
         
         alert('Тренировка сохранена!');
     }
@@ -157,6 +244,7 @@ class WorkoutApp {
             div.innerHTML = `
                 <h4>${workout.name}</h4>
                 <p>${workout.exercises.length} упражнений</p>
+                ${workout.isCircular ? `<p class="exercise-reps">${workout.totalCycles} кругов</p>` : ''}
                 <button onclick="app.startSelectedWorkout(${workout.id})">Начать</button>
                 <button onclick="app.deleteWorkout(${workout.id})">Удалить</button>
             `;
@@ -174,10 +262,16 @@ class WorkoutApp {
         const workout = this.workouts.find(w => w.id === workoutId);
         if (!workout) return;
 
-        this.currentWorkout = workout;
+        this.currentWorkout = JSON.parse(JSON.stringify(workout));
         this.currentExerciseIndex = 0;
+        this.currentCycle = 1;
         this.isRunning = false;
 
+        // Рассчитываем общее время
+        this.totalWorkoutTime = this.calculateWorkoutTime();
+        this.remainingWorkoutTime = this.totalWorkoutTime;
+
+        this.updateTimeDisplay();
         this.switchTab('current');
         this.updateCurrentWorkoutDisplay();
     }
@@ -195,47 +289,193 @@ class WorkoutApp {
 
     pauseWorkout() {
         this.isRunning = false;
+        this.isPauseCountdown = false;
         clearInterval(this.timerInterval);
+        clearInterval(this.pauseTimer);
+        
+        const countdownElement = document.getElementById('pause-countdown');
+        if (countdownElement) countdownElement.remove();
+        
         this.updateButtons();
     }
 
     stopWorkout() {
         this.isRunning = false;
+        this.isPauseCountdown = false;
         clearInterval(this.timerInterval);
+        clearInterval(this.pauseTimer);
+        
+        // Удаляем элемент обратного отсчета если есть
+        const countdownElement = document.getElementById('pause-countdown');
+        if (countdownElement) countdownElement.remove();
+        
         this.currentExerciseIndex = 0;
+        this.currentCycle = 1;
+        this.remainingWorkoutTime = this.calculateWorkoutTime();
+        this.updateTimeDisplay();
         this.updateCurrentWorkoutDisplay();
         this.updateButtons();
     }
 
-    nextExercise() {
+    async nextExercise() {
+        // Вычитаем оставшееся время текущего упражнения
+        if (this.remainingTime > 0) {
+            this.remainingWorkoutTime -= this.remainingTime;
+            this.remainingTime = 0;
+        }
+        
+        // Воспроизводим звук завершения упражнения
+        this.playCompletionSoundPause();
+        
+        // Если включена автопауза и это не последнее упражнение
+        if (this.isAutoPause && !this.isLastExercise()) {
+            await this.startAutoPause();
+        }
+        
         this.currentExerciseIndex++;
+        
         if (this.currentExerciseIndex >= this.currentWorkout.exercises.length) {
-            this.stopWorkout();
-            alert('Тренировка завершена!');
-            return;
+            this.currentCycle++;
+            
+            if (this.currentCycle > this.currentWorkout.totalCycles) {
+                this.stopWorkout();
+                this.playCompletionSoundStop();
+                return;
+            }
+            
+            this.currentExerciseIndex = 0;
         }
 
         this.updateCurrentWorkoutDisplay();
-        if (this.isRunning) {
+        this.updateTimeDisplay();
+        
+        if (this.isRunning && !this.isPauseCountdown) {
             const currentExercise = this.currentWorkout.exercises[this.currentExerciseIndex];
             this.remainingTime = currentExercise.duration;
             this.startTimer();
         }
     }
 
+        isLastExercise() {
+        return this.currentExerciseIndex === this.currentWorkout.exercises.length - 1 &&
+               this.currentCycle === this.currentWorkout.totalCycles;
+    }
+
+    playCompletionSoundPause() {
+        const sound = document.getElementById('notification-sound-pause');
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log('Не удалось воспроизвести звук:', e));
+        }
+        
+        // Визуальная анимация
+        const exerciseElement = document.getElementById('current-exercise');
+        exerciseElement.classList.add('exercise-complete');
+        setTimeout(() => exerciseElement.classList.remove('exercise-complete'), 1000);
+    }
+
+    playCompletionSoundStop() {
+        const sound = document.getElementById('notification-sound-stop');
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log('Не удалось воспроизвести звук:', e));
+        }
+        
+        // Визуальная анимация
+        const exerciseElement = document.getElementById('current-exercise');
+        exerciseElement.classList.add('exercise-complete');
+        setTimeout(() => exerciseElement.classList.remove('exercise-complete'), 1000);
+    }
+
+    async startAutoPause() {
+        this.isPauseCountdown = true;
+        this.pauseCountdownTime = this.pauseDuration;
+        
+        // Останавливаем основной таймер
+        clearInterval(this.timerInterval);
+        this.isRunning = false;
+        this.updateButtons();
+        
+        // Создаем элемент для отображения обратного отсчета
+        let countdownElement = document.getElementById('pause-countdown');
+        if (!countdownElement) {
+            countdownElement = document.createElement('div');
+            countdownElement.id = 'pause-countdown';
+            countdownElement.className = 'pause-countdown';
+            document.querySelector('.current-workout').insertBefore(
+                countdownElement, 
+                document.querySelector('.controls')
+            );
+        }
+        
+        // Обратный отсчет паузы
+        return new Promise((resolve) => {
+            const pauseInterval = setInterval(() => {
+                countdownElement.textContent = `Пауза: ${this.pauseCountdownTime} сек...`;
+                countdownElement.classList.add('sound-on');
+                setTimeout(() => countdownElement.classList.remove('sound-on'), 500);
+                
+                if (this.pauseCountdownTime <= 0) {
+                    clearInterval(pauseInterval);
+                    countdownElement.remove();
+                    this.isPauseCountdown = false;
+                    resolve();
+                }
+                
+                this.pauseCountdownTime--;
+            }, 1000);
+        });
+    }
+
+    // Замените метод startTimer
     startTimer() {
+        if (this.isPauseCountdown) return;
+        
         clearInterval(this.timerInterval);
         this.updateTimerDisplay();
+        this.updateTimeDisplay();
 
+        let lastUpdateTime = Date.now();
+        
         this.timerInterval = setInterval(() => {
-            this.remainingTime--;
-            this.updateTimerDisplay();
-
-            if (this.remainingTime <= 0) {
+            if (this.isPauseCountdown) {
                 clearInterval(this.timerInterval);
-                setTimeout(() => this.nextExercise(), 1000);
+                return;
             }
-        }, 1000);
+            
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - lastUpdateTime) / 1000);
+            
+            if (elapsedSeconds >= 1) {
+                this.remainingTime -= elapsedSeconds;
+                this.remainingWorkoutTime -= elapsedSeconds;
+                lastUpdateTime = now;
+                
+                this.updateTimerDisplay();
+                this.updateTimeDisplay();
+
+                if (this.remainingTime <= 0) {
+                    const overtime = Math.abs(this.remainingTime);
+                    this.remainingTime = 0;
+                    this.remainingWorkoutTime = Math.max(0, this.remainingWorkoutTime - overtime);
+                    
+                    clearInterval(this.timerInterval);
+                    this.updateTimerDisplay();
+                    this.updateTimeDisplay();
+                    
+                    setTimeout(() => this.nextExercise(), 500);
+                }
+                
+                if (this.remainingWorkoutTime <= 0) {
+                    this.remainingWorkoutTime = 0;
+                    this.updateTimeDisplay();
+                    
+                    if (this.isRunning) {
+                        this.stopWorkout();
+                    }
+                }
+            }
+        }, 100);
     }
 
     updateTimerDisplay() {
@@ -250,10 +490,26 @@ class WorkoutApp {
 
         document.getElementById('current-workout-name').textContent = this.currentWorkout.name;
         
+        // Обновляем информацию о круге
+        const cycleInfo = document.getElementById('cycle-info');
+        if (this.currentWorkout.isCircular) {
+            cycleInfo.style.display = 'block';
+            document.getElementById('current-cycle').textContent = 
+                `Круг: ${this.currentCycle}/${this.currentWorkout.totalCycles}`;
+        } else {
+            cycleInfo.style.display = 'none';
+        }
+
         if (this.currentExerciseIndex < this.currentWorkout.exercises.length) {
             const currentExercise = this.currentWorkout.exercises[this.currentExerciseIndex];
             document.getElementById('exercise-title').textContent = currentExercise.name;
-            document.getElementById('exercise-time').textContent = `${currentExercise.duration} сек`;
+            
+            // Показываем номер повторения, если упражнение повторяется
+            let timeText = `${currentExercise.duration} сек`;
+            if (currentExercise.originalCycles > 1) {
+                timeText += ` (Повторение ${currentExercise.currentCycle}/${currentExercise.originalCycles})`;
+            }
+            document.getElementById('exercise-time').textContent = timeText;
         }
 
         this.updateProgress();
@@ -261,22 +517,56 @@ class WorkoutApp {
     }
 
     updateProgress() {
-        const progress = ((this.currentExerciseIndex + 1) / this.currentWorkout.exercises.length) * 100;
+        if (!this.currentWorkout) return;
+        
+        const totalExercises = this.currentWorkout.exercises.length * this.currentWorkout.totalCycles;
+        const completedExercises = (this.currentCycle - 1) * this.currentWorkout.exercises.length + this.currentExerciseIndex;
+        const progress = (completedExercises / totalExercises) * 100;
+        
         document.getElementById('progress-fill').style.width = `${progress}%`;
         document.getElementById('progress-text').textContent = 
-            `${this.currentExerciseIndex + 1}/${this.currentWorkout.exercises.length}`;
+            `${completedExercises}/${totalExercises}`;
     }
 
     renderUpcomingExercises() {
         const container = document.getElementById('upcoming-exercises');
         container.innerHTML = '<h3>Предстоящие упражнения:</h3>';
 
-        this.currentWorkout.exercises.slice(this.currentExerciseIndex + 1).forEach((exercise, index) => {
+        // Показываем следующие 5 упражнений
+        const upcomingExercises = [];
+        let remainingInCycle = this.currentWorkout.exercises.length - this.currentExerciseIndex - 1;
+        
+        // Упражнения в текущем круге
+        for (let i = this.currentExerciseIndex + 1; i < this.currentWorkout.exercises.length && upcomingExercises.length < 5; i++) {
+            upcomingExercises.push({
+                exercise: this.currentWorkout.exercises[i],
+                cycle: this.currentCycle
+            });
+        }
+
+        // Упражнения в следующих кругах
+        for (let cycle = this.currentCycle + 1; cycle <= this.currentWorkout.totalCycles && upcomingExercises.length < 5; cycle++) {
+            for (let i = 0; i < this.currentWorkout.exercises.length && upcomingExercises.length < 5; i++) {
+                upcomingExercises.push({
+                    exercise: this.currentWorkout.exercises[i],
+                    cycle: cycle
+                });
+            }
+        }
+
+        upcomingExercises.forEach((item, index) => {
             const div = document.createElement('div');
             div.className = 'upcoming-item' + (index === 0 ? ' next' : '');
-            div.innerHTML = `
-                <strong>${exercise.name}</strong> - ${exercise.duration} сек
-            `;
+            
+            let text = item.exercise.name;
+            if (this.currentWorkout.isCircular) {
+                text += ` (Круг ${item.cycle})`;
+            }
+            if (item.exercise.originalCycles > 1) {
+                text += ` [${item.exercise.originalCycles} раз]`;
+            }
+            
+            div.innerHTML = `<strong>${text}</strong> - ${item.exercise.duration} сек`;
             container.appendChild(div);
         });
     }
@@ -285,14 +575,37 @@ class WorkoutApp {
         document.getElementById('start-btn').disabled = this.isRunning;
         document.getElementById('pause-btn').disabled = !this.isRunning;
         document.getElementById('next-btn').disabled = !this.isRunning;
-        document.getElementById('stop-btn').disabled = !this.isRunning && this.currentExerciseIndex === 0;
+        document.getElementById('stop-btn').disabled = !this.isRunning && this.currentExerciseIndex === 0 && this.currentCycle === 1;
+    }
+
+    calculateWorkoutTime() {
+        if (!this.currentWorkout) return 0;
+        
+        let totalTime = 0;
+        this.currentWorkout.exercises.forEach(exercise => {
+            totalTime += exercise.duration;
+        });
+        
+        // Умножаем на количество кругов
+        return totalTime * this.currentWorkout.totalCycles;
+    }
+
+    updateTimeDisplay() {
+        const formatTime = (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        };
+
+        document.getElementById('total-time').textContent = formatTime(this.totalWorkoutTime);
+        document.getElementById('remaining-time').textContent = formatTime(this.remainingWorkoutTime);
     }
 }
 
 // Глобальные функции для вызовов из HTML
 function addExercise() {
     const name = document.getElementById('exercise-name').value;
-    const duration = document.getElementById('exercise-duration').value * 60;
+    const duration = document.getElementById('exercise-duration').value;
     app.addExercise(name, duration);
 }
 
@@ -317,4 +630,4 @@ function stopWorkout() {
 }
 
 // Инициализация приложения
-const app = new WorkoutApp();
+const app = new PipeFitApp();

@@ -218,3 +218,93 @@ button:disabled {
         font-size: 14px;
     }
 }
+
+.workout-controls .form-group {
+    margin: 15px 0;
+}
+
+.cycle-info {
+    background: #e8f5e8;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-weight: bold;
+    color: #2e7d32;
+}
+
+.cycle-number {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.exercise-with-cycles {
+    border-left: 4px solid #ff9800 !important;
+}
+
+.cycle-badge {
+    background: #ff9800;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.exercise-reps {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.time-info {
+    display: flex;
+    justify-content: space-around;
+    margin: 15px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.time-info div {
+    text-align: center;
+}
+
+#total-time, #remaining-time {
+    color: #4CAF50;
+    font-size: 1.1em;
+}
+
+.auto-pause-settings {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f0f8ff;
+    border-radius: 8px;
+    border-left: 4px solid #2196F3;
+}
+
+.auto-pause-settings label {
+    display: block;
+    margin: 5px 0;
+}
+
+.pause-countdown {
+    font-size: 1.2em;
+    color: #2196F3;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.exercise-complete {
+    background: #e8f5e8 !important;
+    border: 2px solid #4CAF50 !important;
+}
+
+.sound-on {
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
