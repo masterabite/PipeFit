@@ -25,6 +25,18 @@
                 <button onclick="addExercise()">Добавить</button>
             </div>
             
+            <div class="export-import">
+                <button onclick="app.exportElements()">Экспорт элементов</button>
+                <button onclick="document.getElementById('import-elements').click()">Импорт элементов</button>
+                <input type="file" id="import-elements" accept=".json" style="display: none" onchange="app.importElements(event)">
+            </div>
+
+            <div class="export-import">
+                <button onclick="app.exportWorkouts()">Экспорт тренировок</button>
+                <button onclick="document.getElementById('import-workouts').click()">Импорт тренировок</button>
+                <input type="file" id="import-workouts" accept=".json" style="display: none" onchange="app.importWorkouts(event)">
+            </div>
+
             <div class="elements-list" id="elements-list">
                 <!-- Элементы будут добавляться здесь -->
             </div>
@@ -117,6 +129,13 @@
                     <!-- Предстоящие упражнения -->
                 </div>
             </div>
+        </div>
+
+        <div class="backup-section">
+            <h3>Полный бэкап</h3>
+            <button onclick="app.exportAllData()">Экспорт всех данных</button>
+            <button onclick="document.getElementById('import-backup').click()">Импорт бэкапа</button>
+            <input type="file" id="import-backup" accept=".json" style="display: none" onchange="app.importBackup(event)">
         </div>
     </div>
 

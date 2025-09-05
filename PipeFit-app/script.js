@@ -1,5 +1,8 @@
 class PipeFitApp {
     constructor() {
+        this.exercises = this.loadFromStorage('exercises', []);
+        this.workouts = this.loadFromStorage('workouts', []);
+
         this.exercises = JSON.parse(localStorage.getItem('exercises')) || [];
         this.workouts = JSON.parse(localStorage.getItem('workouts')) || [];
         this.currentWorkout = null;
@@ -21,6 +24,24 @@ class PipeFitApp {
         this.pauseCountdownTime = 0;
         
         this.setupSoundSettings();
+    }
+
+    loadFromStorage(key, defaultValue) {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+        } catch (error) {
+            console.error('Ошибка загрузки из localStorage:', error);
+            return defaultValue;
+        }
+    }
+
+    saveToStorage(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (error) {
+            console.error('Ошибка сохранения в localStorage:', error);
+        }
     }
 
     init() {
@@ -101,6 +122,7 @@ class PipeFitApp {
 
     saveExercises() {
         localStorage.setItem('exercises', JSON.stringify(this.exercises));
+        this.saveToStorage('exercises', this.exercises);
     }
 
     renderExercises() {
@@ -232,6 +254,7 @@ class PipeFitApp {
 
     saveWorkouts() {
         localStorage.setItem('workouts', JSON.stringify(this.workouts));
+        this.saveToStorage('workouts', this.workouts);
     }
 
     renderSavedWorkouts() {
@@ -599,6 +622,223 @@ class PipeFitApp {
 
         document.getElementById('total-time').textContent = formatTime(this.totalWorkoutTime);
         document.getElementById('remaining-time').textContent = formatTime(this.remainingWorkoutTime);
+    }
+
+        // Добавьте методы экспорта
+    exportToFile(data, filename) {
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    exportElements() {
+        if (this.exercises.length === 0) {
+            alert('Нет элементов для экспорта');
+            return;
+        }
+        this.exportToFile(this.exercises, 'workout-elements.json');
+    }
+
+    exportWorkouts() {
+        if (this.workouts.length === 0) {
+            alert('Нет тренировок для экспорта');
+            return;
+        }
+        this.exportToFile(this.workouts, 'workout-programs.json');
+    }
+
+    // Добавьте методы импорта
+    importFromFile(event, type) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                
+                // Валидация данных
+                if (!Array.isArray(data)) {
+                    throw new Error('Файл должен содержать массив данных');
+                }
+
+                if (type === 'elements') {
+                    this.importElementsData(data);
+                } else if (type === 'workouts') {
+                    this.importWorkoutsData(data);
+                }
+
+            } catch (error) {
+                this.showImportError(`Ошибка импорта: ${error.message}`);
+            }
+        };
+
+        reader.onerror = () => {
+            this.showImportError('Ошибка чтения файла');
+        };
+
+        reader.readAsText(file);
+        // Сбрасываем input чтобы можно было выбрать тот же файл снова
+        event.target.value = '';
+    }
+
+    importElements(data) {
+        this.importFromFile(event, 'elements');
+    }
+
+    importWorkouts(data) {
+        this.importFromFile(event, 'workouts');
+    }
+
+    importElementsData(data) {
+        // Валидация структуры элементов
+        const validElements = data.filter(item => 
+            item && 
+            typeof item.name === 'string' && 
+            typeof item.duration === 'number' &&
+            item.duration > 0
+        );
+
+        if (validElements.length === 0) {
+            this.showImportError('Не найдено валидных элементов в файле');
+            return;
+        }
+
+        // Добавляем новые элементы (исключая дубликаты по имени)
+        let addedCount = 0;
+        validElements.forEach(newElement => {
+            const exists = this.exercises.some(ex => 
+                ex.name.toLowerCase() === newElement.name.toLowerCase()
+            );
+            
+            if (!exists) {
+                this.exercises.push({
+                    ...newElement,
+                    id: Date.now() + Math.random() // Уникальный ID
+                });
+                addedCount++;
+            }
+        });
+
+        this.saveExercises();
+        this.renderExercises();
+        this.showImportSuccess(`Импортировано ${addedCount} новых элементов`);
+    }
+
+    importWorkoutsData(data) {
+        // Валидация структуры тренировок
+        const validWorkouts = data.filter(item => 
+            item &&
+            typeof item.name === 'string' &&
+            Array.isArray(item.exercises) &&
+            item.exercises.length > 0
+        );
+
+        if (validWorkouts.length === 0) {
+            this.showImportError('Не найдено валидных тренировок в файле');
+            return;
+        }
+
+        // Добавляем новые тренировки (исключая дубликаты по имени)
+        let addedCount = 0;
+        validWorkouts.forEach(newWorkout => {
+            const exists = this.workouts.some(workout => 
+                workout.name.toLowerCase() === newWorkout.name.toLowerCase()
+            );
+            
+            if (!exists) {
+                this.workouts.push({
+                    ...newWorkout,
+                    id: Date.now() + Math.random(), // Уникальный ID
+                    createdAt: new Date().toISOString()
+                });
+                addedCount++;
+            }
+        });
+
+        this.saveWorkouts();
+        this.renderSavedWorkouts();
+        this.showImportSuccess(`Импортировано ${addedCount} новых тренировок`);
+    }
+
+    showImportSuccess(message) {
+        this.showImportMessage(message, 'import-success');
+    }
+
+    showImportError(message) {
+        this.showImportMessage(message, 'import-error');
+    }
+
+    showImportMessage(message, className) {
+        // Удаляем предыдущие сообщения
+        document.querySelectorAll('.import-message').forEach(el => el.remove());
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `import-message ${className}`;
+        messageDiv.textContent = message;
+        
+        // Добавляем сообщение в текущую активную вкладку
+        const activeTab = document.querySelector('.tab-content.active');
+        activeTab.insertBefore(messageDiv, activeTab.firstChild);
+        
+        // Автоудаление через 5 секунд
+        setTimeout(() => {
+            if (messageDiv.parentElement) {
+                messageDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // Добавьте метод для создания резервной копии всех данных
+    exportAllData() {
+        const allData = {
+            version: '1.0',
+            exportDate: new Date().toISOString(),
+            exercises: this.exercises,
+            workouts: this.workouts
+        };
+        
+        this.exportToFile(allData, 'workout-backup.json');
+    }
+
+    // Добавьте метод для импорта полной резервной копии
+    importBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                
+                if (data.exercises && Array.isArray(data.exercises)) {
+                    this.exercises = data.exercises;
+                    this.saveExercises();
+                    this.renderExercises();
+                }
+                
+                if (data.workouts && Array.isArray(data.workouts)) {
+                    this.workouts = data.workouts;
+                    this.saveWorkouts();
+                    this.renderSavedWorkouts();
+                }
+                
+                this.showImportSuccess('Резервная копия успешно восстановлена');
+                
+            } catch (error) {
+                this.showImportError('Ошибка восстановления резервной копии');
+            }
+        };
+        
+        reader.readAsText(file);
     }
 }
 

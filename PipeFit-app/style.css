@@ -308,3 +308,38 @@ button:disabled {
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+.export-import {
+    margin: 20px 0;
+    padding: 15px;
+    background: #fff3e0;
+    border-radius: 8px;
+    border-left: 4px solid #ff9800;
+}
+
+.export-import button {
+    background: #ff9800;
+    margin: 5px;
+}
+
+.export-import button:hover {
+    background: #f57c00;
+}
+
+.import-success {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    border-left: 4px solid #4CAF50;
+}
+
+.import-error {
+    background: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    border-left: 4px solid #f44336;
+}

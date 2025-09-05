@@ -1,0 +1,239 @@
+{
+  "version": "1.0",
+  "exportDate": "2025-09-05T12:48:13.460Z",
+  "exercises": [
+    {
+      "id": 1757054896683,
+      "name": "Беговые упражнения",
+      "duration": 400
+    },
+    {
+      "id": 1757055136332,
+      "name": "разминка/упражнения на полу",
+      "duration": 400
+    },
+    {
+      "id": 1757055335747,
+      "name": "Разминка в парах/тройках",
+      "duration": 600
+    },
+    {
+      "id": 1757055445363,
+      "name": "Защита на мате",
+      "duration": 240
+    },
+    {
+      "id": 1757058564128,
+      "name": "|секти атака-защита",
+      "duration": 240
+    },
+    {
+      "id": 1757058609633,
+      "name": "Розыгрыш с подачей",
+      "duration": 300
+    },
+    {
+      "id": 1757058629656,
+      "name": "Разминка на сетке",
+      "duration": 600
+    },
+    {
+      "id": 1757058647136,
+      "name": "Розыгрыш от блока",
+      "duration": 300
+    },
+    {
+      "id": 1757059688552,
+      "name": "Бег",
+      "duration": 400
+    },
+    {
+      "id": 1757066896314,
+      "name": "test",
+      "duration": 3
+    }
+  ],
+  "workouts": [
+    {
+      "id": 1757060901328,
+      "name": "Первая тренировка",
+      "exercises": [
+        {
+          "id": 1757059688552,
+          "name": "Бег",
+          "duration": 400,
+          "originalCycles": 1,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757054896683,
+          "name": "Беговые упражнения",
+          "duration": 400,
+          "originalCycles": 1,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757055136332,
+          "name": "разминка/упражнения на полу",
+          "duration": 400,
+          "originalCycles": 1,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757055335747,
+          "name": "Разминка в парах/тройках",
+          "duration": 600,
+          "originalCycles": 1,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757058564128,
+          "name": "|секти атака-защита",
+          "duration": 240,
+          "originalCycles": 2,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757058564128,
+          "name": "|секти атака-защита",
+          "duration": 240,
+          "originalCycles": 2,
+          "currentCycle": 2
+        },
+        {
+          "id": 1757058629656,
+          "name": "Разминка на сетке",
+          "duration": 600,
+          "originalCycles": 2,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757058629656,
+          "name": "Разминка на сетке",
+          "duration": 600,
+          "originalCycles": 2,
+          "currentCycle": 2
+        },
+        {
+          "id": 1757058609633,
+          "name": "Розыгрыш с подачей",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757058609633,
+          "name": "Розыгрыш с подачей",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 2
+        },
+        {
+          "id": 1757058609633,
+          "name": "Розыгрыш с подачей",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 3
+        },
+        {
+          "id": 1757058609633,
+          "name": "Розыгрыш с подачей",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 4
+        },
+        {
+          "id": 1757058609633,
+          "name": "Розыгрыш с подачей",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 5
+        },
+        {
+          "id": 1757058609633,
+          "name": "Розыгрыш с подачей",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 6
+        },
+        {
+          "id": 1757058647136,
+          "name": "Розыгрыш от блока",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757058647136,
+          "name": "Розыгрыш от блока",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 2
+        },
+        {
+          "id": 1757058647136,
+          "name": "Розыгрыш от блока",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 3
+        },
+        {
+          "id": 1757058647136,
+          "name": "Розыгрыш от блока",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 4
+        },
+        {
+          "id": 1757058647136,
+          "name": "Розыгрыш от блока",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 5
+        },
+        {
+          "id": 1757058647136,
+          "name": "Розыгрыш от блока",
+          "duration": 300,
+          "originalCycles": 6,
+          "currentCycle": 6
+        }
+      ],
+      "isCircular": false,
+      "totalCycles": 1,
+      "currentCycle": 1,
+      "createdAt": "2025-09-05T08:28:21.328Z"
+    },
+    {
+      "id": 1757067593778,
+      "name": "test",
+      "exercises": [
+        {
+          "id": 1757066896314,
+          "name": "test",
+          "duration": 3,
+          "originalCycles": 3,
+          "currentCycle": 1
+        },
+        {
+          "id": 1757066896314,
+          "name": "test",
+          "duration": 3,
+          "originalCycles": 3,
+          "currentCycle": 2
+        },
+        {
+          "id": 1757066896314,
+          "name": "test",
+          "duration": 3,
+          "originalCycles": 3,
+          "currentCycle": 3
+        }
+      ],
+      "isCircular": false,
+      "totalCycles": 1,
+      "currentCycle": 1,
+      "createdAt": "2025-09-05T10:19:53.778Z"
+    }
+  ]
+}
