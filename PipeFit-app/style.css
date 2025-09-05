@@ -91,31 +91,6 @@ button {
     }
 }
 
-/* Улучшения для темной темы */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #121212;
-        color: #ffffff;
-    }
-    
-    .container {
-        background: #1e1e1e;
-    }
-    
-    input {
-        background: #2d2d2d;
-        color: #ffffff;
-        border-color: #404040;
-    }
-    
-    .exercise-item {
-        background: #2d2d2d;
-    }
-    
-    .current-exercise {
-        background: #2d2d2d;
-    }
-}
 
 * {
     margin: 0;
