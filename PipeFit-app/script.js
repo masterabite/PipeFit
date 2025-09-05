@@ -24,6 +24,71 @@ class PipeFitApp {
         this.pauseCountdownTime = 0;
         
         this.setupSoundSettings();
+
+        this.registerServiceWorker();
+        this.setupSwipeGestures();
+    }
+
+    setupSwipeGestures() {
+        let startX, startY;
+        const minSwipeDistance = 50;
+
+        document.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            if (!startX || !startY) return;
+
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const diffX = endX - startX;
+            const diffY = endY - startY;
+
+            // Проверяем, что это горизонтальный свайп
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+                if (diffX > 0) {
+                    this.swipeRight();
+                } else {
+                    this.swipeLeft();
+                }
+            }
+
+            startX = startY = null;
+        });
+    }
+
+    swipeLeft() {
+        const tabs = ['elements', 'workout', 'current'];
+        const currentTab = document.querySelector('.nav-btn.active').dataset.tab;
+        const currentIndex = tabs.indexOf(currentTab);
+        
+        if (currentIndex < tabs.length - 1) {
+            this.switchTab(tabs[currentIndex + 1]);
+        }
+    }
+
+    swipeRight() {
+        const tabs = ['elements', 'workout', 'current'];
+        const currentTab = document.querySelector('.nav-btn.active').dataset.tab;
+        const currentIndex = tabs.indexOf(currentTab);
+        
+        if (currentIndex > 0) {
+            this.switchTab(tabs[currentIndex - 1]);
+        }
+    }
+
+    registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('SW registered: ', registration);
+                })
+                .catch(error => {
+                    console.log('SW registration failed: ', error);
+                });
+        }
     }
 
     loadFromStorage(key, defaultValue) {
