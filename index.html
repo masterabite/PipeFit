@@ -25,6 +25,7 @@
 
         <!-- Вкладка элементов -->
         <div class="tab-content active" id="elements-tab">
+            
             <div class="form-group">
                 <input type="text" id="exercise-name" placeholder="Название упражнения">
                 <input type="number" id="exercise-duration" placeholder="Длительность (сек)">
@@ -45,6 +46,45 @@
 
             <div class="elements-list" id="elements-list">
                 <!-- Элементы будут добавляться здесь -->
+            </div>
+
+            <div class="notification-settings">
+                <h3>🔔 Настройки уведомлений</h3>
+                
+                <label class="switch">
+                    <input type="checkbox" id="enable-notifications" checked>
+                    <span class="slider"></span>
+                    Включить уведомления
+                </label>
+
+                <div class="notification-types">
+                    <h4>Типы уведомлений:</h4>
+                    <label>
+                        <input type="checkbox" id="notify-start" checked>
+                        Начало тренировки
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-complete" checked>
+                        Завершение упражнений
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-pause" checked>
+                        Пауза тренировки
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-finish" checked>
+                        Завершение тренировки
+                    </label>
+                </div>
+
+                <div class="notification-permission">
+                    <button onclick="app.requestNotificationPermission()" class="permission-btn">
+                        📋 Запросить разрешение
+                    </button>
+                    <p class="permission-status">
+                        Статус: <span id="permission-status">Не запрошено</span>
+                    </p>
+                </div>
             </div>
         </div>
 
