@@ -38,7 +38,222 @@ class PipeFitApp {
         
         this.loadNotificationSettings();
         this.initNotifications();
+        this.setupNotificationEventListeners();
     }
+
+    setupNotificationEventListeners() {
+        // Обработчики для чекбоксов настроек
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupCheckbox('enable-notifications', 'enabled');
+            this.setupCheckbox('notify-start', 'onWorkoutStart');
+            this.setupCheckbox('notify-complete', 'onExerciseComplete');
+            this.setupCheckbox('notify-pause', 'onWorkoutPause');
+            this.setupCheckbox('notify-finish', 'onWorkoutComplete');
+            
+            this.updatePermissionStatus();
+        });
+    }
+
+    setupCheckbox(elementId, settingName) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.checked = this.notificationSettings[settingName];
+            element.addEventListener('change', (e) => {
+                this.notificationSettings[settingName] = e.target.checked;
+                this.saveNotificationSettings();
+            });
+        }
+    }
+
+    loadNotificationSettings() {
+        const saved = localStorage.getItem('notificationSettings');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                this.notificationSettings = { ...this.notificationSettings, ...parsed };
+            } catch (error) {
+                console.error('Ошибка загрузки настроек уведомлений:', error);
+            }
+        }
+    }
+
+    saveNotificationSettings() {
+        localStorage.setItem('notificationSettings', JSON.stringify(this.notificationSettings));
+    }
+
+    async initNotifications() {
+        if (!('Notification' in window)) {
+            console.log('Браузерные уведомления не поддерживаются');
+            this.notificationSettings.enabled = false;
+            return;
+        }
+
+        this.updatePermissionStatus();
+    }
+
+    async requestNotificationPermission() {
+        console.log('Запрос разрешения на уведомления...');
+        
+        if (!('Notification' in window)) {
+            alert('Браузерные уведомления не поддерживаются вашим браузером');
+            return;
+        }
+
+        try {
+            const permission = await Notification.requestPermission();
+            console.log('Результат запроса разрешения:', permission);
+            
+            this.updatePermissionStatus();
+            
+            if (permission === 'granted') {
+                this.showNotification('Уведомления включены!', {
+                    body: 'Теперь вы будете получать уведомления о тренировках',
+                    icon: '/icons/icon-192x192.png'
+                });
+                
+                // Включаем уведомления в настройках
+                this.notificationSettings.enabled = true;
+                document.getElementById('enable-notifications').checked = true;
+                this.saveNotificationSettings();
+                
+            } else if (permission === 'denied') {
+                alert('Уведомления заблокированы. Разрешите уведомления в настройках браузера.');
+                this.notificationSettings.enabled = false;
+                document.getElementById('enable-notifications').checked = false;
+                this.saveNotificationSettings();
+            }
+            
+        } catch (error) {
+            console.error('Ошибка запроса разрешения:', error);
+            alert('Произошла ошибка при запросе разрешения на уведомления');
+        }
+    }
+
+    updatePermissionStatus() {
+        const statusElement = document.getElementById('permission-status');
+        if (!statusElement) return;
+
+        if (!('Notification' in window)) {
+            statusElement.textContent = 'Не поддерживается';
+            statusElement.style.color = '#f44336';
+            return;
+        }
+
+        switch (Notification.permission) {
+            case 'granted':
+                statusElement.textContent = 'Разрешено ✅';
+                statusElement.style.color = '#4CAF50';
+                break;
+            case 'denied':
+                statusElement.textContent = 'Заблокировано ❌';
+                statusElement.style.color = '#f44336';
+                
+                // Если уведомления заблокированы, отключаем их
+                this.notificationSettings.enabled = false;
+                if (document.getElementById('enable-notifications')) {
+                    document.getElementById('enable-notifications').checked = false;
+                }
+                this.saveNotificationSettings();
+                break;
+            default:
+                statusElement.textContent = 'Не запрошено';
+                statusElement.style.color = '#ff9800';
+        }
+    }
+
+    showNotification(title, options = {}) {
+        // Проверяем, включены ли уведомления и есть ли разрешение
+        if (!this.notificationSettings.enabled || Notification.permission !== 'granted') {
+            console.log('Уведомления отключены или нет разрешения');
+            return null;
+        }
+
+        // Проверяем, активно ли окно приложения
+        const isDocumentVisible = document.visibilityState === 'visible';
+        
+        // Не показываем уведомления если приложение активно (опционально)
+        if (isDocumentVisible && options.silentInApp) {
+            console.log('Приложение активно, уведомление не показано');
+            return null;
+        }
+
+        const notificationOptions = {
+            icon: '/icons/icon-192x192.png',
+            badge: '/icons/icon-72x72.png',
+            tag: 'workout-notification',
+            ...options
+        };
+
+        try {
+            // Создаем и показываем уведомление
+            const notification = new Notification(title, notificationOptions);
+            console.log('Уведомление показано:', title);
+
+            // Обработчик клика по уведомлению
+            notification.onclick = () => {
+                console.log('Клик по уведомлению');
+                window.focus();
+                notification.close();
+                
+                // Переключаемся на вкладку текущей тренировки
+                this.switchTab('current');
+            };
+
+            // Автоматическое закрытие через 5 секунд
+            setTimeout(() => {
+                notification.close();
+            }, 5000);
+
+            return notification;
+        } catch (error) {
+            console.error('Ошибка показа уведомления:', error);
+            return null;
+        }
+    }
+
+    // Уведомление о завершении упражнения
+    async notifyExerciseComplete() {
+        if (!this.notificationSettings.onExerciseComplete) return;
+
+        const currentExercise = this.currentWorkout.exercises[this.currentExerciseIndex];
+        await this.showNotification('Упражнение завершено!', {
+            body: `Завершено: ${currentExercise.name}`,
+            tag: 'exercise-complete',
+            silentInApp: true
+        });
+    }
+
+    // Уведомление о начале тренировки
+    async notifyWorkoutStart() {
+        if (!this.notificationSettings.onWorkoutStart) return;
+
+        await this.showNotification('Тренировка началась!', {
+            body: `Начата тренировка: ${this.currentWorkout.name}`,
+            tag: 'workout-start'
+        });
+    }
+
+    // Уведомление о паузе
+    async notifyWorkoutPause() {
+        if (!this.notificationSettings.onWorkoutPause) return;
+
+        await this.showNotification('Тренировка на паузе', {
+            body: 'Тренировка приостановлена',
+            tag: 'workout-pause'
+        });
+    }
+
+    // Уведомление о завершении тренировки
+    async notifyWorkoutComplete() {
+        if (!this.notificationSettings.onWorkoutComplete) return;
+
+        await this.showNotification('Тренировка завершена! 🎉', {
+            body: 'Отличная работа! Тренировка завершена.',
+            tag: 'workout-complete',
+            requireInteraction: true
+        });
+    }
+
 
     loadNotificationSettings() {
         const saved = localStorage.getItem('notificationSettings');
@@ -1155,6 +1370,17 @@ class PipeFitApp {
     }
 }
 
+function requestNotificationPermission() {
+    if (app && typeof app.requestNotificationPermission === 'function') {
+        app.requestNotificationPermission();
+    } else {
+        console.error('App not initialized or method not found');
+    }
+}
+<button onclick="requestNotificationPermission()" class="permission-btn">
+    📋 Запросить разрешение
+</button>
+
 // Глобальные функции для вызовов из HTML
 function addExercise() {
     const name = document.getElementById('exercise-name').value;
@@ -1183,4 +1409,8 @@ function stopWorkout() {
 }
 
 // Инициализация приложения
-const app = new PipeFitApp();
+let app;
+document.addEventListener('DOMContentLoaded', () => {
+    app = new WorkoutApp();
+    console.log('Workout App initialized');
+});
